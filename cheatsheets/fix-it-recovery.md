@@ -1,97 +1,97 @@
 # Fix it! — recovery cheat sheet
 
-Find your situation, run the fix. Before anything drastic, run `git status`
-and read it. Nothing committed is ever truly lost (see the last section).
+Find your situation, run the fix. Before anything drastic: `git status`, and
+read it. Nothing committed is ever truly lost (last section).
+
+```mermaid
+flowchart TD
+    Q{"What went wrong?"}
+    Q --> U["uncommitted edits\nI want gone"] --> U1["git restore file\n🖱️ ↶ Discard"]
+    Q --> S["staged by mistake"] --> S1["git restore --staged file\n🖱️ −"]
+    Q --> L["last commit wrong\n(not pushed)"] --> L1["--amend · reset --soft\n🖱️ Undo Last Commit"]
+    Q --> P["pushed commit wrong"] --> P1["git revert id"]
+    Q --> C["conflict markers\neverywhere"] --> C1["resolve · add · commit\nor git merge --abort"]
+    Q --> R["push rejected"] --> R1["git pull, then push"]
+    Q --> X["no idea, all broken"] --> X1["git reflog\ngit reset --hard good-id"]
+    classDef danger fill:#fde2e2,stroke:#c62828,color:#000
+    class U1 danger
+```
 
 ## Uncommitted changes
 
 | Situation | Fix |
 |-----------|-----|
-| I edited a file and want the last committed version back | `git restore <file>` (edits are gone for good) |
-| I want to throw away **all** uncommitted edits | `git restore .` then `git clean -fd` for untracked files (check with `git clean -n` first) |
-| I staged a file by mistake | `git restore --staged <file>` |
-| I staged everything by mistake | `git restore --staged .` |
-| I need to switch branches but have half-done work | `git stash`, switch, later `git stash pop` |
-| Git refuses to switch branch: "would be overwritten" | commit or `git stash` first |
-| I deleted a file by accident (not committed) | `git restore <file>` |
-| I deleted a file and committed the deletion | `git restore --source HEAD~1 <file>` then commit |
+| edits to a file I want gone | `git restore <file>` · 🖱️ ↶ Discard Changes (irreversible) |
+| **all** uncommitted edits gone | `git restore .` then `git clean -fd` for untracked files (preview with `git clean -n`) |
+| staged a file by mistake | `git restore --staged <file>` · 🖱️ − |
+| need to switch branch mid-work | `git stash`, switch, `git stash pop` · 🖱️ … → Stash |
+| "would be overwritten by checkout" | commit or stash first |
+| deleted a file by accident (not committed) | `git restore <file>` |
+| deleted a file and committed it | `git restore --source HEAD~1 <file>`, commit |
 
 ## Last commit (not yet pushed)
 
 | Situation | Fix |
 |-----------|-----|
-| Typo in the message | `git commit --amend -m "Fixed message"` |
-| Forgot a file | `git add <file>` then `git commit --amend --no-edit` |
-| Committed too much; want to split it | `git reset --soft HEAD~1`, then re-add and commit in pieces |
-| Committed on the wrong branch | `git branch correct-branch` (saves it), `git reset --hard HEAD~1` (removes from here), `git switch correct-branch` |
-| Want the commit gone **and** its changes gone | `git reset --hard HEAD~1` |
-| Want the commit gone but keep changes to rework | `git reset HEAD~1` |
-| Committed a secret (password, API key) | rotate the secret **now**; then `git reset --soft HEAD~1`, remove it, recommit. If already pushed, rotating is the only real fix. |
+| typo in the message | `git commit --amend -m "Fixed message"` |
+| forgot a file | `git add <file>` then `git commit --amend --no-edit` |
+| committed too much, want to split | `git reset --soft HEAD~1` · 🖱️ Undo Last Commit, then re-add in pieces |
+| committed on the wrong branch | `git branch correct-branch` · `git reset --hard HEAD~1` · `git switch correct-branch` |
+| commit and its changes both gone | `git reset --hard HEAD~1` |
+| commit gone, keep changes to rework | `git reset HEAD~1` |
+| committed a secret | rotate the secret **now**; then `git reset --soft HEAD~1`, remove it, recommit. Once pushed, rotating is the only real fix |
 
 ## Older or already-pushed commits
 
 | Situation | Fix |
 |-----------|-----|
-| A pushed commit was wrong | `git revert <id>` then `git push` (makes an "undo" commit) |
-| Several pushed commits were wrong | `git revert <oldest>^..<newest>` or revert each |
-| I want to see the project as it was at commit X | `git checkout <id>`, look, `git switch main` to return |
-| I want one file as it was at commit X | `git restore --source <id> <file>` |
-| I amended/reset a commit that was already pushed and now push is rejected | if nobody else has pulled: `git push --force-with-lease`; otherwise `git pull`, accept the mess, and revert instead next time |
+| a pushed commit was wrong | `git revert <id>` then push |
+| several pushed commits wrong | revert each, newest first |
+| see the project as it was at X | `git checkout <id>` · 🖱️ Graph → Checkout; back with `git switch main` |
+| one file as it was at X | `git restore --source <id> <file>` |
+| amended/reset a pushed commit; push rejected | nobody else pulled it: `git push --force-with-lease`; otherwise pull, accept the mess, revert next time |
 
 ## Branches
 
 | Situation | Fix |
 |-----------|-----|
-| I deleted a branch I still needed | `git reflog` to find its last commit id, then `git switch -c <name> <id>` |
-| I am in "detached HEAD" and made commits | `git switch -c save-my-work` (commits now live on a branch) |
-| I am in detached HEAD and made no commits | `git switch main` |
-| Merge went wrong, want to start over | `git merge --abort` (during) or `git reset --hard HEAD~1` (after, if the merge commit is the last one and unpushed) |
-| Rebase went wrong | `git rebase --abort` |
-| Branch has drifted far behind main | `git switch my-branch && git merge main` (resolve conflicts) |
+| deleted a branch I needed | `git reflog` → find its last commit → `git switch -c <name> <id>` |
+| detached HEAD and I made commits | `git switch -c save-my-work` |
+| detached HEAD, no commits | `git switch main` |
+| merge went wrong | `git merge --abort` during; `git reset --hard HEAD~1` after, if the merge commit is last and unpushed |
+| rebase went wrong | `git rebase --abort` |
+| branch far behind main | `git switch my-branch && git merge main`, resolve |
 
 ## Merge conflicts
 
-1. `git status` lists files under *Unmerged paths*.
-2. Open each. Find `<<<<<<< HEAD` … `=======` … `>>>>>>> branch`.
-3. Edit to the final content; delete all three marker lines.
-4. `git add <file>` for each.
-5. `git commit`.
+1. `git status` lists *Unmerged paths* · 🖱️ *Merge Changes* section.
+2. In each file find `<<<<<<<` … `=======` … `>>>>>>>`; keep what you want; delete the markers. 🖱️ Accept Current / Incoming / Both, or the merge editor.
+3. `git add <file>` each · 🖱️ +.
+4. `git commit` · 🖱️ ✓.
 
-Shortcuts for "take one side entirely":
-
-```bash
-git checkout --ours <file>     # keep my version (current branch)
-git checkout --theirs <file>   # keep their version (incoming branch)
-git add <file>
-```
-
-Bail out: `git merge --abort`.
-
-For a conflicted notebook: `nbmerge-web notebook.ipynb` (from `nbdime`), or
-take one side with `--ours`/`--theirs` and re-apply the other change by hand.
+One side wholesale: `git checkout --ours <file>` (mine) or `--theirs` (incoming), then `git add`. Bail out: `git merge --abort`. Conflicted notebook: `nbmerge-web notebook.ipynb`.
 
 ## Remote problems
 
 | Message | Meaning | Fix |
 |---------|---------|-----|
-| `! [rejected] ... (fetch first)` / `non-fast-forward` | remote has commits you lack | `git pull`, resolve, `git push` |
-| `fatal: not a git repository` | you are not inside a repo folder | `cd` into it, or `git init` |
-| `fatal: remote origin already exists` | remote is already set | `git remote set-url origin <url>` to change it |
-| `There is no tracking information for the current branch` | branch not linked to remote | `git push -u origin <branch>` (or `git pull origin <branch>`) |
-| `Permission denied (publickey)` | SSH key not set up or not added to GitHub | lesson 6, option B; or switch URL to HTTPS |
-| `Authentication failed` over HTTPS | password used instead of token, or expired token | `gh auth login` or create a new token |
-| `Updates were rejected because the tip of your current branch is behind` | same as fetch first | `git pull` then `git push` |
-| `refusing to merge unrelated histories` | local and remote repos were both created with content | `git pull origin main --allow-unrelated-histories`, resolve, push |
-| `error: Your local changes would be overwritten by merge` | uncommitted edits in files the pull would change | commit or `git stash`, then pull |
-| Large file rejected (>100 MB) | GitHub limit | remove from the commit (`git rm --cached`, amend), add to `.gitignore`; consider Git LFS |
+| `! [rejected] … (fetch first)` / `non-fast-forward` | remote has commits you lack | `git pull`, resolve, `git push` |
+| `fatal: not a git repository` | not inside a repo folder | `cd` into it, or `git init` |
+| `remote origin already exists` | remote already set | `git remote set-url origin <url>` |
+| `no tracking information for the current branch` | branch not linked to remote | `git push -u origin <branch>` |
+| `Permission denied (publickey)` | SSH key missing on GitHub | lesson 6; or switch the URL to HTTPS |
+| `Authentication failed` | password instead of token, or expired | `gh auth login` or sign in again in VS Code |
+| `refusing to merge unrelated histories` | both local and remote were created with content | `git pull origin main --allow-unrelated-histories`, resolve, push |
+| `Your local changes would be overwritten by merge` | uncommitted edits in files the pull changes | commit or stash, then pull |
+| file over 100 MB rejected | GitHub limit | `git rm --cached`, amend, add to `.gitignore`; consider Git LFS |
 
 ## .gitignore not working
 
 | Situation | Fix |
 |-----------|-----|
-| File is ignored but still shows as modified | it was committed before being ignored: `git rm --cached <file>` then commit |
-| Whole folder still tracked | `git rm -r --cached <folder>` then commit |
-| Not sure why a file is/isn't ignored | `git check-ignore -v <file>` |
+| ignored file still shows as modified | it was committed before being ignored: `git rm --cached <file>`, commit |
+| whole folder still tracked | `git rm -r --cached <folder>`, commit |
+| not sure why a file is or is not ignored | `git check-ignore -v <file>` |
 
 ## "Everything is broken and I do not know what I did"
 
@@ -99,30 +99,25 @@ take one side with `--ours`/`--theirs` and re-apply the other change by hand.
 git reflog
 ```
 
-This lists every state HEAD has been in, newest first, with what you did:
-
 ```
 a1b2c3d HEAD@{0}: reset: moving to HEAD~2
 f9e8d7c HEAD@{1}: commit: The commit I wanted to keep
-...
 ```
 
-Pick the entry from **before** the mistake and:
+Pick the entry from **before** the mistake:
 
 ```bash
 git reset --hard f9e8d7c          # go back there
-# or, less drastic:
-git switch -c rescue f9e8d7c      # put it on a new branch and inspect
+git switch -c rescue f9e8d7c      # or: put it on a new branch and inspect
 ```
 
-The reflog keeps entries for 90 days. It recovers deleted branches, bad
-resets, bad rebases and lost commits. The only things it cannot recover are
-changes that were **never committed** and were destroyed by `git restore`,
-`git reset --hard` or `git clean`. That is why you commit often.
+Reflog entries last about 90 days. It recovers deleted branches, bad resets,
+bad rebases and lost commits. It cannot recover work that was **never
+committed** and was destroyed by `restore`, `reset --hard` or `clean`.
 
-## Nuclear option: start the clone over
+## Nuclear option: fresh clone
 
-If the local repo is hopeless and everything important is on GitHub:
+If the local repo is hopeless and GitHub has what matters:
 
 ```bash
 cd ..

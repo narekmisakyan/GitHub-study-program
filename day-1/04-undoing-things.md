@@ -1,132 +1,154 @@
-# Lesson 4 — Undoing things
+# 4 · Undoing things
 
-**Time: 40 minutes.**
+> ⏱️ 40 min · 🎯 Recover from every common mistake, and know which undo is safe · ⌨️ + 🖱️ Practise each one in `weather-project`
 
-The reason to use Git is that mistakes stop being scary. This lesson covers
-every common "oops" in order of how often it happens. Practise each one in
-your `weather-project` repo.
+**Day 1 ▸ Lesson 4 of 5**
 
-A rule that keeps you safe: **once something is committed, it is almost
-impossible to lose it.** Most undo commands only touch things that are *not*
-yet committed, and those are the only things at real risk.
+The reason to use Git is that mistakes stop being scary. One rule keeps you
+safe:
 
-## 1. "I edited a file and want to throw the edits away"
+> [!IMPORTANT]
+> **Once something is committed it is almost impossible to lose.** Most undo
+> commands only touch work that is *not yet committed*, and that is the only
+> work at real risk. Commit early, commit often.
 
-The file is modified but not staged. Discard the changes and get back the
-last committed version:
+## 🧭 Which undo do I need?
 
-```bash
-git restore temps.py
+```mermaid
+flowchart TD
+    Q{"What do you want\nto undo?"}
+    Q --> A["Edits I have not\nstaged yet"]
+    Q --> B["Something I staged\nby mistake"]
+    Q --> C["My last commit\n(not pushed yet)"]
+    Q --> D["An older or already\nshared commit"]
+    Q --> E["I need to park\nhalf-done work"]
+    Q --> F["Everything is broken,\nno idea what I did"]
+    A --> A1["git restore file\n🖱️ ↶ Discard Changes"]
+    B --> B1["git restore --staged file\n🖱️ − Unstage"]
+    C --> C1{"keep the\nchanges?"}
+    C1 -- "fix message / add file" --> C2["git commit --amend"]
+    C1 -- "yes, rework them" --> C3["git reset --soft HEAD~1\n🖱️ Undo Last Commit"]
+    C1 -- "no, drop them" --> C4["git reset --hard HEAD~1"]
+    D --> D1["git revert id\n(new commit that cancels it)"]
+    E --> E1["git stash … git stash pop\n🖱️ … → Stash"]
+    F --> F1["git reflog\nthen git reset --hard id"]
+    classDef danger fill:#fde2e2,stroke:#c62828,color:#000
+    classDef safe fill:#e3f2e1,stroke:#2e7d32,color:#000
+    class A1,C4 danger
+    class B1,C2,C3,D1,E1,F1 safe
 ```
 
-**This is destructive.** The uncommitted edits are gone for good. Git warns
-you in `git status` with the hint `(use "git restore <file>..." to discard
-changes)`.
+Red boxes destroy uncommitted work. Green boxes are reversible.
 
-Try it: add a junk line to `temps.py`, run `git diff`, then `git restore
-temps.py` and `git diff` again. Clean.
+## 1 · "I edited a file and want the edits gone"
 
-## 2. "I staged a file but did not mean to"
+The file is modified, not staged. Get the last committed version back:
+
+| ⌨️ Terminal | 🖱️ VS Code |
+|------------|-----------|
+| `git restore temps.py` | hover the file under *Changes* → **↶ Discard Changes** → confirm |
+
+**This is destructive.** The edits are gone for good.
+
+🧪 Add a junk line to `temps.py`, look at the diff, discard it, look again.
+
+## 2 · "I staged a file but did not mean to"
+
+| ⌨️ Terminal | 🖱️ VS Code |
+|------------|-----------|
+| `git restore --staged temps.py` | hover the file under *Staged Changes* → **−** (Unstage Changes) |
+
+Your edits are untouched; only the box was unpacked.
+
+## 3 · "Typo in the message, or I forgot a file"
+
+Only for the **most recent** commit, and only if you have **not pushed** it:
 
 ```bash
-git restore --staged temps.py
-```
-
-The file goes back to "modified, not staged". Your edits are untouched; only
-the box was unpacked.
-
-## 3. "I committed with a typo in the message, or forgot a file"
-
-If it is the **most recent** commit and you have **not pushed it anywhere**:
-
-```bash
-# fix the message only
-git commit --amend -m "Better message"
-
-# add a forgotten file to the last commit
+git commit --amend -m "Better message"      # fix the message
 git add forgotten.py
-git commit --amend --no-edit
+git commit --amend --no-edit                 # add a file, keep the message
 ```
 
-`--amend` replaces the last commit with a new one. Never amend a commit that
-you have already pushed to GitHub and others may have; that rewrites history
-they already have (lesson 6).
+🖱️ Source Control **…** menu → *Commit* → **Undo Last Commit**, then fix and
+commit again. Same result, two steps.
 
-## 4. "I want to undo the last commit but keep my changes"
+`--amend` *replaces* the last commit with a new one. Never amend a commit
+others may already have (lesson 6 explains why).
+
+## 4 · "Undo the last commit but keep my changes"
 
 ```bash
 git reset --soft HEAD~1
 ```
 
 `HEAD~1` means "one commit before HEAD". The commit disappears from history;
-the changes it contained are back in the staging area, ready to re-commit
-differently. Use this when you committed too early or bundled two things
-together.
+its changes are back in the staging area, ready to be re-committed
+differently. Use this when you committed too early or bundled two things.
 
-Variants, from gentle to brutal:
+The three flavours of reset, gentle to brutal:
 
-| Command | Commit removed? | Changes kept staged? | Changes kept on disk? |
-|---------|-----------------|----------------------|------------------------|
+| Command | Commit removed? | Changes still staged? | Changes still on disk? |
+|---------|-----------------|------------------------|------------------------|
 | `git reset --soft HEAD~1` | yes | yes | yes |
-| `git reset HEAD~1` (mixed, default) | yes | no | yes |
+| `git reset HEAD~1` (default, "mixed") | yes | no | yes |
 | `git reset --hard HEAD~1` | yes | no | **no, deleted** |
 
-`--hard` is the only truly dangerous one. Before using it, make sure you
-really want your working directory to look exactly like that older commit.
+🖱️ **Undo Last Commit** in the Source Control menu is the `--soft` version.
 
-## 5. "That commit from last week was wrong, and it is already shared"
+## 5 · "That commit from last week was wrong, and it is already shared"
 
-Do not reset; that rewrites shared history. Instead make a **new** commit that
-does the opposite:
+Do not reset: that rewrites history other people have. Make a **new** commit
+that does the opposite:
 
 ```bash
 git revert 3f2a9c1
 ```
 
-Git creates a commit titled `Revert "..."` that undoes the changes of
-`3f2a9c1`. History stays intact, the bad change is cancelled. This is the
-safe choice whenever the commit has left your machine.
-
-## 6. "I want to see the project as it was at some older commit"
-
-```bash
-git log --oneline            # find the id
-git checkout 3f2a9c1         # look around (read-only time travel)
-git switch -                 # come back to where you were
+```mermaid
+gitGraph
+    commit id: "add loader"
+    commit id: "3f2a9c1 bad change"
+    commit id: "add plot"
+    commit id: "revert 3f2a9c1" type: REVERSE
 ```
 
-While "checked out" at an old commit you are in **detached HEAD** state. Git
-will print a scary-sounding message about it. It just means you are not on a
-branch. Look, run the code, then `git switch main` to return. If you want to
-build on that old point, create a branch there (lesson 5):
-`git switch -c from-old-point`.
+History stays intact; the bad change is cancelled. Safe whenever a commit has
+left your machine. 🖱️ Right-click a commit in the Graph → there is no revert
+there yet; use the terminal.
 
-## 7. "I just want one old version of one file back"
+## 6 · "Show me the project as it was at an older commit"
+
+| ⌨️ Terminal | 🖱️ VS Code |
+|------------|-----------|
+| `git log --oneline` → `git checkout 3f2a9c1` → look around → `git switch -` | Graph → right-click the commit → **Checkout** → look around → click the branch name in the status bar → `main` |
+
+While parked on an old commit you are in **detached HEAD** state. Git prints
+an alarming message; it just means you are not on a branch. Look, run the
+code, come back. To *build* on that old point, make a branch there (lesson
+5): `git switch -c from-old-point`.
+
+## 7 · "I just want one old version of one file"
 
 ```bash
 git restore --source 3f2a9c1 temps.py
 ```
 
-The file in your working directory becomes the version from that commit.
-Commit it if you want to keep it.
+🖱️ Open the file → **Timeline** → click an old entry to see it → copy what
+you need, or use the terminal command.
 
-## 8. "I need to switch tasks but I am in the middle of something"
+## 8 · "I must switch tasks but I am mid-way through something"
 
-Uncommitted work and a half-finished state. Shelve it:
+| ⌨️ Terminal | 🖱️ VS Code |
+|------------|-----------|
+| `git stash` … later `git stash pop` | Source Control **…** → *Stash* → **Stash** … later → **Pop Latest Stash** |
 
-```bash
-git stash              # saves modified tracked files and cleans the directory
-# ... do the other thing, switch branches, whatever ...
-git stash pop          # bring the work back
-```
+`git stash list` shows what is parked; `git stash -u` includes untracked
+files. A stash is a pocket, not an archive; commit properly when you can.
 
-`git stash list` shows what is stashed; `git stash -u` includes untracked
-files too. Stashes are a temporary pocket, not a long-term archive; commit
-properly when you can.
+## 9 · "I did something and now everything is broken"
 
-## 9. "I did something and now everything is broken, help"
-
-Git keeps a diary of every place HEAD has pointed in the last ~90 days:
+Git keeps a diary of every place HEAD has pointed for about 90 days:
 
 ```bash
 git reflog
@@ -138,42 +160,62 @@ a1b2c3d HEAD@{0}: reset: moving to HEAD~1
 3f2a9c1 HEAD@{2}: commit (initial): Add temperature conversion script
 ```
 
-Find the entry from just before the disaster and go back to it:
+Find the entry from just *before* the disaster and go back:
 
 ```bash
 git reset --hard 8b1e4d2
 ```
 
-This recovers "lost" commits after a bad reset, a deleted branch, a bad
-rebase. The only thing reflog cannot recover is work that was never committed
-and was destroyed with `git restore` or `git reset --hard`.
+This recovers lost commits after a bad reset, a deleted branch, a bad
+rebase. The only thing it cannot recover is work that was never committed.
 
-## 10. Practice
+## 📊 How dangerous is each undo?
 
-Do each of these in `weather-project`:
+```mermaid
+quadrantChart
+    title Undo commands: how often you need them vs. how much they can destroy
+    x-axis Rarely needed --> Needed daily
+    y-axis Safe --> Destroys uncommitted work
+    quadrant-1 Everyday, handle with care
+    quadrant-2 Rare and dangerous
+    quadrant-3 Rare and safe
+    quadrant-4 Everyday and safe
+    "git restore file": [0.75, 0.80]
+    "git restore --staged": [0.70, 0.10]
+    "git commit --amend": [0.60, 0.25]
+    "git reset --soft": [0.45, 0.20]
+    "git reset --hard": [0.25, 0.95]
+    "git revert": [0.30, 0.10]
+    "git stash": [0.55, 0.35]
+    "git reflog": [0.15, 0.05]
+```
 
-1. Make an edit, discard it with `git restore`.
-2. Stage a file, unstage it.
+## 🧪 Practice
+
+In `weather-project`, do each one:
+
+1. Make an edit, discard it (both ways).
+2. Stage a file, unstage it (both ways).
 3. Commit, then amend the message.
-4. Commit, then `git reset --soft HEAD~1`, then re-commit with a better
-   message.
-5. Revert your newest commit, then look at `git log --oneline`.
-6. Check out your very first commit, `cat temps.py`, switch back to `main`.
-7. Run `git reflog` and read the story it tells.
+4. Commit, then `git reset --soft HEAD~1`, then re-commit with a better message.
+5. Revert your newest commit; look at the Graph.
+6. Check out your very first commit from the Graph, open `temps.py`, return to `main`.
+7. Stash an edit, confirm the file is clean, pop it back.
+8. Run `git reflog` and read the story it tells.
 
 ## Recap
 
-| I want to… | Command |
-|------------|---------|
-| discard unstaged edits to a file | `git restore <file>` |
-| unstage a file | `git restore --staged <file>` |
-| fix the last commit (unpushed) | `git commit --amend` |
-| undo last commit, keep changes | `git reset --soft HEAD~1` |
-| undo last commit, drop changes | `git reset --hard HEAD~1` |
-| cancel an old/shared commit safely | `git revert <id>` |
-| look at an old commit | `git checkout <id>` then `git switch main` |
-| get one old file back | `git restore --source <id> <file>` |
-| park work temporarily | `git stash` / `git stash pop` |
-| find anything I "lost" | `git reflog` |
+| I want to… | Command | 🖱️ VS Code |
+|------------|---------|-----------|
+| discard unstaged edits | `git restore <file>` | ↶ Discard Changes |
+| unstage | `git restore --staged <file>` | − Unstage |
+| fix the last commit (unpushed) | `git commit --amend` | Undo Last Commit, redo |
+| undo last commit, keep changes | `git reset --soft HEAD~1` | … → Commit → Undo Last Commit |
+| undo last commit, drop changes | `git reset --hard HEAD~1` | terminal |
+| cancel a shared commit safely | `git revert <id>` | terminal |
+| look at an old commit | `git checkout <id>` … `git switch main` | Graph → Checkout |
+| get one old file back | `git restore --source <id> <file>` | Timeline |
+| park work | `git stash` / `git stash pop` | … → Stash |
+| find anything I lost | `git reflog` | terminal |
 
-Next: [Lesson 5 — Branches](05-branches.md)
+Next: [5 · Branches](05-branches.md)

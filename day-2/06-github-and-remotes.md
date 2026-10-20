@@ -1,216 +1,176 @@
-# Lesson 6 — GitHub and remotes
+# 6 · GitHub and remotes
 
-**Time: 45 minutes.** You need the GitHub account from lesson 2.
+> ⏱️ 45 min · 🎯 Put a repository on GitHub, push, pull, clone, and handle a rejected push · ⌨️ + 🖱️ Uses the GitHub account from lesson 2
 
-So far everything lived on your laptop. Today you connect it to GitHub.
+**Day 2 ▸ Lesson 6 of 9**
 
-## 1. What a remote is
+Day 1 happened entirely on your laptop. Today your repository gets a second
+home on GitHub.
 
-A **remote** is a named link to another copy of your repository, usually on
-GitHub. By convention the main remote is called `origin`.
+## 🧠 A remote is a named link to another copy
 
-Pushing sends your commits to the remote. Pulling fetches commits from the
-remote and merges them into your branch. Nothing happens automatically; Git
-only talks to the remote when you tell it to.
-
-```
-   your laptop                                  github.com
-   ┌─────────────┐      git push               ┌─────────────┐
-   │  main       │ ──────────────────────────▶ │  main       │
-   │  (local)    │ ◀────────────────────────── │  (origin)   │
-   └─────────────┘      git pull / fetch       └─────────────┘
+```mermaid
+flowchart LR
+    L["💻 local repo\n(laptop, VS Code)"] -- "git push" --> G[("☁️ origin\ngithub.com/USER/cleankit")]
+    G -- "git fetch · git pull" --> L
+    T["💻 teammate\nor 🤖 agent"] <-- "push · pull" --> G
 ```
 
-## 2. Authenticate once
+The default remote is called `origin`. Nothing syncs on its own: Git talks
+to the remote only when you push or pull.
 
-GitHub no longer accepts your account password from the command line. Pick
-one of these, once per machine.
+## 1 · Credentials: VS Code already has them
 
-### Option A — GitHub CLI (easiest)
+You signed in to GitHub inside VS Code in lesson 2, so VS Code can push and
+pull for you. The terminal needs its own setup only if you want to run
+`git push` there too:
 
-Install `gh` from https://cli.github.com (`brew install gh`, `winget install
-GitHub.cli`, or your Linux package manager). Then:
+<details>
+<summary>⌨️ GitHub CLI (recommended; you will need it on Day 3)</summary>
 
-```bash
-gh auth login
+Install from https://cli.github.com, then `gh auth login` and choose
+*GitHub.com → HTTPS → Login with a web browser*. Git credentials are
+configured as part of it.
+</details>
+
+<details>
+<summary>⌨️ SSH key (the long-term developer setup)</summary>
+
+Run `ssh-keygen -t ed25519 -C "you@example.com"` and accept the defaults.
+Copy the contents of `~/.ssh/id_ed25519.pub` into GitHub → *Settings → SSH
+and GPG keys → New SSH key*. Test with `ssh -T git@github.com`. SSH remote
+addresses look like `git@github.com:USER/repo.git`.
+</details>
+
+## 2 · Publish `cleankit`
+
+```mermaid
+flowchart LR
+    A["cleankit on disk\n(Day 1 history)"] -- "Publish to GitHub" --> B[("github.com/USER/cleankit\nsame commits, same branches")]
 ```
 
-Choose *GitHub.com → HTTPS → Login with a web browser*, follow the prompts.
-This also configures Git to use the stored credential. Done.
+| 🖱️ VS Code | ⌨️ Terminal |
+|-----------|-------------|
+| Source Control view → **Publish to GitHub** → pick *private* or *public*. VS Code creates the repository, adds `origin`, and pushes `main` | On github.com: **+ → New repository**, name `cleankit`, leave it **empty** (no README, licence or `.gitignore`), create. Then: `git remote add origin https://github.com/USER/cleankit.git` and `git push -u origin main` |
 
-### Option B — SSH keys (what most developers end up using)
+`-u` ties local `main` to `origin/main`, so from now on a bare `git push`
+or `git pull` knows where to go. Check with `git remote -v`.
 
-```bash
-ssh-keygen -t ed25519 -C "you@example.com"      # press Enter for all prompts
-cat ~/.ssh/id_ed25519.pub                       # print the PUBLIC key
+🧪 Open the repository in the browser. Every Day 1 commit is there,
+including the merges. Click **commits**, then click a commit to see its diff.
+
+## 3 · The other direction: clone
+
+| ⌨️ Terminal | 🖱️ VS Code |
+|------------|-----------|
+| `git clone https://github.com/USER/cleankit.git cleankit-copy` | Command Palette → **Git: Clone** → *Clone from GitHub* → choose the repo and a folder |
+
+A clone brings the whole history and has `origin` preset. Clone a famous
+project once to feel it: `git clone https://github.com/pandas-dev/pandas.git`
+(big; delete it afterwards).
+
+## 4 · The daily rhythm
+
+```mermaid
+flowchart LR
+    P["start: git pull\n🖱️ ↻ Sync"] --> W["work\nedit → stage → commit\n(repeat)"] --> U["stop: git push\n🖱️ ↻ Sync"]
+    U -. "tomorrow" .-> P
 ```
 
-Copy the printed line. On GitHub: *Settings → SSH and GPG keys → New SSH
-key*, paste, save. Test:
+The **↻ Sync Changes** button in the status bar runs pull *then* push. The
+badge next to it, such as `↓2 ↑1`, means two commits to fetch and one to
+push.
 
-```bash
-ssh -T git@github.com
-# Hi username! You've successfully authenticated...
+`git pull` is really two commands:
+
+```mermaid
+sequenceDiagram
+    participant L as 💻 local
+    participant G as ☁️ origin
+    L->>G: git fetch (anything new?)
+    G-->>L: 2 new commits → stored as origin/main
+    L->>L: git merge origin/main (bring them into my main)
 ```
 
-With SSH, repository addresses look like `git@github.com:user/repo.git`.
-With HTTPS they look like `https://github.com/user/repo.git`. Use whichever
-matches how you authenticated.
-
-### Option C — Personal access token over HTTPS
-
-*Settings → Developer settings → Personal access tokens → Fine-grained
-tokens*. Create one with *Contents: read and write* on your repos. When Git
-asks for a password, paste the token. A credential helper (installed with Git
-on Windows and macOS) remembers it.
-
-## 3. Put an existing local repo on GitHub
-
-Use your `cleankit` repo from the Day 1 exercise.
-
-1. On github.com click **+ → New repository**. Name it `cleankit`. Leave it
-   **empty**: do not tick "Add a README", do not add `.gitignore` or a license
-   (you already have content; a non-empty remote complicates the first push).
-   Choose Public or Private. Click *Create repository*.
-2. GitHub shows instructions. The relevant part:
-
-```bash
-cd ~/cleankit
-git remote add origin https://github.com/YOURNAME/cleankit.git   # or the git@ form
-git push -u origin main
-```
-
-`-u` (upstream) links your local `main` to `origin/main` so that in future
-plain `git push` and `git pull` know where to go. You only need `-u` the
-first time for each branch.
-
-Refresh the GitHub page. Your files and your whole history are there. Click
-*commits* to browse them; click any file and press the *History* button.
-
-```bash
-git remote -v          # show configured remotes
-```
-
-## 4. Starting from GitHub instead: `git clone`
-
-The other direction. If the repo already exists on GitHub (yours or someone
-else's, public), copy it to your machine:
-
-```bash
-cd ~
-git clone https://github.com/YOURNAME/cleankit.git cleankit-copy
-cd cleankit-copy
-git log --oneline      # full history came along
-git remote -v          # origin is already set up
-```
-
-Try cloning something real: `git clone https://github.com/pandas-dev/pandas.git`
-gives you the entire source and 15 years of history of pandas. (It is
-large; delete it afterwards.)
-
-## 5. The daily rhythm: pull, work, commit, push
-
-```bash
-git pull               # get anything new from GitHub first
-# ... edit, git add, git commit, repeat ...
-git push               # send your commits to GitHub
-```
-
-`git pull` is actually two steps: `git fetch` (download new commits to a
-hidden `origin/main` reference) followed by `git merge origin/main`. You can
-run them separately when you want to look before merging:
+Run them separately when you want to look before merging:
 
 ```bash
 git fetch
-git log --oneline main..origin/main    # what is on GitHub that I lack?
+git log --oneline main..origin/main    # commits on GitHub that I do not have
 git merge origin/main
 ```
 
-## 6. Simulate a collaborator
+## 5 · 🧪 The rejected push
 
-You have two clones now: `~/cleankit` and `~/cleankit-copy`. Pretend they are
-you and a teammate.
+Open `cleankit` and `cleankit-copy` in two VS Code windows and play two
+people.
 
-1. In `cleankit-copy`, add a line to `README.md`, commit, `git push`.
-2. In `cleankit`, run `git pull`. The line appears.
-3. Now in `cleankit`, change `cleankit.py` and commit. In `cleankit-copy`,
-   change `README.md` again and commit, then push.
-4. In `cleankit`, `git push`:
+1. In the copy: edit `README.md`, commit, push.
+2. In the original: pull. The edit arrives.
+3. In the original: edit `cleankit.py` and commit, **do not push yet**. In the copy: edit `README.md` again, commit, push.
+4. In the original: push.
 
 ```
- ! [rejected]        main -> main (fetch first)
-error: failed to push some refs
-hint: Updates were rejected because the remote contains work that you do not
-hint: have locally.
+ ! [rejected]  main -> main (fetch first)
+hint: Updates were rejected because the remote contains work that you do not have locally.
 ```
 
-This is the single most common Git message in team work. It means: *someone
-pushed since you last pulled. Pull first, then push.*
-
-```bash
-git pull           # merges origin's new commit with yours (may open editor; save and close)
-git push           # now succeeds
+```mermaid
+sequenceDiagram
+    participant A as 💻 original
+    participant G as ☁️ origin
+    participant B as 💻 copy
+    B->>G: push
+    A->>G: push
+    G-->>A: ✗ rejected (fetch first)
+    A->>G: pull → fetch + merge
+    A->>G: push
+    G-->>A: ✓
 ```
 
-If both of you edited the same lines, the pull produces a conflict, which you
-resolve exactly as in lesson 5, then `git push`.
+Read it as: *somebody pushed since your last pull. Pull, then push.* If both
+sides changed the same lines, the pull ends in a conflict, which you resolve
+with the merge editor from lesson 5, then push. The Sync button does the
+same sequence and surfaces the conflict the same way.
 
-## 7. Pushing branches
+## 6 · Branches and the remote
 
-Branches are local until you push them:
+| Task | ⌨️ Terminal | 🖱️ VS Code |
+|------|------------|-----------|
+| publish a new branch | `git push -u origin add-docs` | **Publish Branch** (cloud icon in the status bar) |
+| see remote branches | `git branch -r` | branch menu lists `origin/…` |
+| get a branch someone pushed | `git fetch` then `git switch their-branch` | branch menu → choose `origin/their-branch` |
+| delete a branch on GitHub | `git push origin --delete add-docs` | Command Palette → **Git: Delete Branch…** → the remote entry |
 
-```bash
-git switch -c add-docs
-# ... commit ...
-git push -u origin add-docs     # creates the branch on GitHub
-```
+## 7 · Rules for shared history
 
-Later, `git push` alone works on that branch. To see remote branches:
-`git branch -r`. To get a branch a teammate pushed:
+> [!CAUTION]
+> A pushed commit may already be on someone else's machine.
+> - Do not `--amend`, `reset` or `rebase` commits that are on a shared branch. Use `git revert`.
+> - Do not force-push `main`. On a feature branch only you use, `git push --force-with-lease` after an amend is acceptable.
+> - Pull before starting, push before stopping. Frequent small pushes mean easy merges.
 
-```bash
-git fetch
-git switch their-branch          # Git creates a local copy tracking origin/their-branch
-```
+## 8 · Tour of the repository page
 
-To delete a branch on GitHub after merging: `git push origin --delete
-add-docs`.
-
-## 8. Rules for shared history
-
-Once a commit is pushed, assume someone else has it.
-
-* **Never** `--amend`, `reset`, or `rebase` commits that are already pushed to
-  a shared branch. Use `git revert` instead.
-* **Never** `git push --force` to `main`. On your own feature branch that
-  nobody else has pulled, `git push --force-with-lease` is acceptable after
-  an amend; the `--with-lease` part refuses if someone else pushed meanwhile.
-* Pull before you start work; push when you stop. Small, frequent pushes
-  mean small, easy merges.
-
-## 9. Reading a GitHub repository page
-
-Spend five minutes on your repo's page and find:
-
-* **Code** tab: files, latest commit per file, the README rendered below.
-* The **branch dropdown** (top left of the file list).
-* **Commits** link: the history, with a diff view per commit.
-* **Issues**, **Pull requests**, **Actions**, **Settings** tabs.
-* The green **Code** button: the clone address.
-* The pencil icon on any file: edit in the browser (this makes a commit!).
+| Looking for | Where |
+|-------------|-------|
+| files and the rendered README | **Code** tab |
+| another branch | branch dropdown above the file list |
+| history | **commits** link |
+| clone address | green **Code** button |
+| editing in the browser (creates a commit) | pencil icon on a file |
+| issues, pull requests, Actions, settings | the tabs along the top |
 
 ## Recap
 
-| Command | Meaning |
-|---------|---------|
-| `git remote add origin <url>` | link local repo to GitHub |
-| `git remote -v` | list remotes |
-| `git push -u origin main` | first push of a branch |
-| `git push` / `git pull` | sync current branch |
-| `git fetch` | download without merging |
-| `git clone <url>` | copy a remote repo locally |
-| `git push -u origin <branch>` | publish a branch |
-| `git push origin --delete <branch>` | delete a remote branch |
-| `git branch -r` | list remote branches |
+| Command | Meaning | 🖱️ VS Code |
+|---------|---------|-----------|
+| `git remote add origin <url>` | link to GitHub | Publish to GitHub |
+| `git push -u origin <branch>` | first push of a branch | Publish Branch |
+| `git push` / `git pull` | sync the current branch | ↻ Sync Changes |
+| `git fetch` | download, do not merge | … → Fetch |
+| `git clone <url>` | copy a remote repo | Git: Clone |
+| `git branch -r` | remote branches | branch menu |
+| `git push origin --delete <b>` | delete a remote branch | Git: Delete Branch… |
 
-Next: [Lesson 7 — Pull requests and collaboration](07-pull-requests-and-collaboration.md)
+Next: [7 · Pull requests and collaboration](07-pull-requests-and-collaboration.md)

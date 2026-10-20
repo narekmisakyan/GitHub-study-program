@@ -1,21 +1,23 @@
-# Day 2 exercises — publish and collaborate
+# Day 2 exercise — publish and collaborate
 
-**Time: about 60 minutes.** Uses your `cleankit` repo from Day 1 and your
-GitHub account.
+> ⏱️ 60 min · 🎯 Put `cleankit` on GitHub, run a full pull-request cycle with an issue, survive a teammate conflict, make notebooks behave, tag a version · Uses the `cleankit` repo from Day 1
+
+```mermaid
+flowchart LR
+    A["A · publish"] --> B["B · issue → branch →\nPR → review → merge"] --> C["C · teammate\nconflict"] --> D["D · notebooks"] --> E["E · tag v1.0"] --> F["F · contribute\nto a real repo\n(optional)"]
+```
 
 ## Part A — Publish
 
-1. Add a `.gitignore` for Python/Jupyter (lesson 9) and commit it.
-2. Create an empty repository named `cleankit` on GitHub.
-3. Add it as `origin` and push `main` with `-u`.
-4. On GitHub, confirm all your Day 1 commits are visible, including the merge
-   commits. Click on the conflict-resolution commit and read its diff.
+1. Add a Python/Jupyter `.gitignore` (lesson 9) and commit it.
+2. **Publish to GitHub** from VS Code (or create an empty repo and push).
+3. On GitHub, confirm the Day 1 history is all there. Open the
+   conflict-resolution merge commit and read its diff.
 
-## Part B — Work through a pull request
+## Part B — A full pull-request cycle
 
-5. Open an **issue**: "Add `dedupe()` to remove duplicate values while
-   preserving order."
-6. Locally: pull, create branch `add-dedupe`, implement:
+4. Open an **issue**: *"Add `dedupe()` to remove duplicate values while preserving order."*
+5. Locally: sync, create branch `add-dedupe`, implement:
 
    ```python
    def dedupe(values):
@@ -29,58 +31,44 @@ GitHub account.
    ```
 
    Commit with a proper subject and a body that references the issue.
-7. Push the branch and open a PR. Description: what, why, `Closes #1`.
-8. On the *Files changed* tab, leave yourself a line comment asking for a
-   docstring. Locally add the docstring, commit, push. See the PR update.
-9. Merge the PR with *Squash and merge*. Delete the branch on GitHub. Confirm
-   the issue closed itself.
-10. Locally: `git switch main`, `git pull`, `git branch -d add-dedupe`,
-    `git fetch --prune`. Look at `git log --oneline`: one squashed commit
-    for the whole PR.
+6. Publish the branch and open a PR from VS Code. Let the ✨ draft the
+   description, then edit it and add `Closes #1`.
+7. Request a **Copilot** review on GitHub. Read what it says.
+8. On *Files changed*, leave yourself a comment asking for a docstring. Add it, commit, push; the PR updates.
+9. **Squash and merge**. Delete the branch on GitHub. Confirm the issue closed itself.
+10. Locally: switch to `main`, sync, delete `add-dedupe`, fetch with prune. The Graph shows one squashed commit for the whole PR.
 
-## Part C — Simulate a teammate and a conflict
+## Part C — A teammate and a conflict
 
-11. Clone your repo a second time into `~/cleankit-teammate`.
-12. In **both** clones, edit the first line of `README.md` to something
-    different and commit (do not push yet).
-13. Push from `cleankit-teammate`. Then try to push from `cleankit`. Read the
-    rejection message.
-14. In `cleankit`: `git pull`. Resolve the conflict, commit, push. Verify on
-    GitHub that the README has your chosen line.
-15. In `cleankit-teammate`: `git pull`. Both clones now agree.
+11. Clone the repo a second time into `cleankit-teammate` and open it in a second VS Code window.
+12. In **both** clones, change the first line of `README.md` to something different and commit. Do not push yet.
+13. Push from the teammate clone. Then sync the original and read the rejection, then the conflict.
+14. Resolve in the merge editor, commit, push. Check the README on GitHub.
+15. Sync the teammate clone. Both agree.
 
 ## Part D — Notebooks
 
-16. In `cleankit`, install `nbstripout` and run `nbstripout --install`.
-    Commit the `.gitattributes` it created.
-17. Create `notebooks/01-demo.ipynb` that imports `cleankit` and shows each
-    function on a sample list. Run all cells. Commit and push.
-18. On GitHub, open the notebook. It renders, but with no outputs: the
-    stripping worked. (If outputs are there, run `git status`; the notebook
-    was probably added before the install.)
+16. Install `nbstripout`, run `nbstripout --install`, commit `.gitattributes`.
+17. Create `notebooks/01-demo.ipynb` showing every function on a sample list. Run all cells. Commit and push.
+18. Open the notebook on GitHub: no outputs, because the filter stripped them. (Outputs present? `git status`; the notebook was probably added before the filter was installed.)
 
 ## Part E — Version it
 
-19. Update the README to document all functions (lesson 9 template).
-20. Create `requirements.txt` (can be empty or contain `nbstripout`).
-21. Commit, tag `v1.0` with an annotated tag, push the tag. On GitHub, create
-    a Release from it with a sentence of notes.
+19. Rewrite the README with the lesson 9 template, documenting all functions.
+20. Add `requirements.txt` (it may contain only `nbstripout`).
+21. Commit, create annotated tag `v1.0`, push the tag, and draft a Release on GitHub with one sentence of notes.
 
-## Part F — Contribute to someone else's repo (optional, 15 min)
+## Part F — Contribute to a real repo (optional, 15 min)
 
-22. Find a repo you like that has a typo in its README, or use
-    https://github.com/firstcontributions/first-contributions which exists
-    purely for this. Fork it, clone your fork, branch, fix, push, open a PR
-    against the original. Watch what happens.
+22. Fork https://github.com/firstcontributions/first-contributions (it exists for exactly this), clone your fork, branch, follow its README, push, open a PR against the original.
 
-## Self-assessment
+## ✅ Self-assessment
 
-- [ ] I can put a local project on GitHub and get it back on another machine.
+- [ ] I can put a local project on GitHub and clone it elsewhere.
 - [ ] I know what to do when a push is rejected.
-- [ ] I can open, update and merge a pull request, and link it to an issue.
-- [ ] I can resolve a conflict that comes from a pull.
+- [ ] I can open, update, review and merge a PR, and link it to an issue.
+- [ ] I can resolve a conflict that arrives through a pull.
 - [ ] My notebooks commit without outputs and my data stays out of the repo.
-- [ ] I can tag a version and find it again later.
+- [ ] I can tag a version and find it again.
 
-Finish with the [self-check quiz](../self-check-quiz.md), then keep the
-[cheat sheets](../cheatsheets/) somewhere you will find them.
+Next: [10 · Copilot in your Git loop](../day-3/10-copilot-in-your-git-loop.md)

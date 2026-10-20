@@ -1,24 +1,53 @@
-# Lesson 3 — Your first repo: the core loop
+# 3 · Your first repo: the core loop
 
-**Time: 45 minutes. Type everything.**
+> ⏱️ 45 min · 🎯 Create a repo, stage, commit, see what changed, read history, in VS Code and in the terminal · ⌨️ + 🖱️ Type everything
 
-By the end of this lesson you will know the five commands that make up 90% of
-daily Git use: `status`, `add`, `commit`, `log`, `diff`.
+**Day 1 ▸ Lesson 3 of 5**
 
-## 1. Create a repository
+Five actions make up 90 % of daily Git: **status, add, commit, diff, log**.
+By the end of this lesson they will be boring. Boring is the goal.
 
-```bash
-cd ~                      # go to your home folder
-mkdir weather-project
-cd weather-project
-git init
+## 🧠 The picture to memorise first
+
+Every file in a repo is in one of these states. The whole lesson is just
+moving files around this diagram.
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> Untracked : create a file
+    Untracked --> Staged : git add
+    Staged --> Committed : git commit
+    Committed --> Modified : edit the file
+    Modified --> Staged : git add
+    Modified --> Committed : git restore (discard edits)
+    Staged --> Modified : git restore --staged
 ```
 
-Output: `Initialized empty Git repository in /Users/you/weather-project/.git/`
+And the three "places" a file lives in, side by side:
 
-Run `ls -a`. You see the hidden `.git` folder. Your folder now has a memory.
+```mermaid
+flowchart LR
+    WD["📝 Working directory\nyour files on disk\n(what the editor shows)"]
+    SA["📦 Staging area\nthe box being packed\nfor the next commit"]
+    RP["🗄️ Repository\nsealed snapshots\n(.git)"]
+    WD -- "git add  ·  🖱️ +" --> SA
+    SA -- "git commit  ·  🖱️ ✓ Commit" --> RP
+    SA -. "git restore --staged  ·  🖱️ −" .-> WD
+    RP -. "git restore  ·  🖱️ ↶ Discard" .-> WD
+```
 
-## 2. The most important command: `git status`
+## 1 · Create a repository
+
+| ⌨️ Terminal | 🖱️ VS Code |
+|------------|-----------|
+| `mkdir ~/weather-project && cd ~/weather-project && git init` | *File → Open Folder…* → create and open `weather-project` → Source Control view (`Ctrl+Shift+G`) → **Initialize Repository** |
+
+Either way you get `Initialized empty Git repository in …/weather-project/.git/`.
+Run `ls -a` in the terminal: the hidden `.git` folder is there. The status bar
+now shows `⑂ main`.
+
+## 2 · The most important command: `git status`
 
 ```bash
 git status
@@ -26,19 +55,17 @@ git status
 
 ```
 On branch main
-
 No commits yet
-
 nothing to commit (create/copy files and use "git add" to track)
 ```
 
-`git status` tells you where you are and what Git is waiting for. **When in
-doubt, run `git status`.** It never changes anything; it only reports.
+`git status` tells you where you are and what Git is waiting for. **It never
+changes anything.** When in doubt, run it. The VS Code equivalent is simply
+looking at the Source Control view: it *is* a live `git status`.
 
-## 3. Create a file
+## 3 · Create a file
 
-Make a file called `temps.py` with this content (use Jupyter, VS Code, or
-`nano temps.py`):
+Make `temps.py` (Explorer → New File) with:
 
 ```python
 temps_c = [21.5, 23.0, 19.8, 25.1]
@@ -49,95 +76,54 @@ def to_fahrenheit(c):
 print([to_fahrenheit(t) for t in temps_c])
 ```
 
-Now:
+Now look:
 
-```bash
-git status
-```
+| ⌨️ `git status` says | 🖱️ VS Code shows |
+|---------------------|-----------------|
+| `Untracked files: temps.py` | `temps.py` under **Changes** with a green `U` badge |
 
-```
-Untracked files:
-  (use "git add <file>..." to include in what will be committed)
-        temps.py
-```
+**Untracked** means Git sees the file but has never been told to remember it.
 
-**Untracked** means: Git sees the file but has never been told to remember it.
+## 4 · The two-step save: add, then commit
 
-## 4. The two-step save: `add` then `commit`
+This is where everyone gets confused, so slowly:
 
-This is the part that confuses everyone at first, so read slowly.
+1. **Add** (stage) chooses *which* changes go into the next snapshot.
+2. **Commit** takes the snapshot of everything staged, with a message.
 
-Saving in Git is two steps:
+Why two steps? You often edit five files but want two separate commits
+("fix bug in loader", "add plot"). Staging lets you pick. Think of packing
+a box: `add` puts things in, `commit` seals it and writes the label.
 
-1. `git add` — choose **which changes** go into the next snapshot. This puts
-   them in the **staging area** (also called the *index*).
-2. `git commit` — take the snapshot of everything staged, with a message.
-
-Why two steps? Because you often edit five files but want to make two
-separate commits ("fix bug in loader" and "add plot"). Staging lets you pick.
-
-Think of it as packing a box: `add` puts items in the box, `commit` seals it
-and writes the label.
-
-```bash
-git add temps.py
-git status
-```
-
-```
-Changes to be committed:
-        new file:   temps.py
-```
-
-The file is staged. Now seal the box:
-
-```bash
-git commit -m "Add temperature conversion script"
-```
+| ⌨️ Terminal | 🖱️ VS Code |
+|------------|-----------|
+| `git add temps.py` | hover `temps.py` under Changes → click **+** (Stage Changes). It moves to **Staged Changes** |
+| `git commit -m "Add temperature conversion script"` | type the message in the box at the top → **✓ Commit** (or `Ctrl+Enter`) |
 
 ```
 [main (root-commit) 3f2a9c1] Add temperature conversion script
  1 file changed, 5 insertions(+)
- create mode 100644 temps.py
 ```
 
-`3f2a9c1` is the start of the commit's ID (a 40-character hash). You will
-usually refer to commits by their first 7 characters.
+`3f2a9c1` is the start of the commit's ID, a 40-character hash. You refer to
+commits by their first 7 characters. `git status` now says `nothing to
+commit, working tree clean`, and the Source Control view is empty.
 
-`git status` now says `nothing to commit, working tree clean`. Everything on
-disk matches the latest snapshot.
+> [!TIP]
+> If you click **✓ Commit** with nothing staged, VS Code offers to stage all
+> changes for you. Handy, but read the list first (section 9 explains why).
 
-## 5. The three places a file can be
+## 5 · Make a change and see it: diff
 
-Every file lives in up to three places at once. This picture is worth
-memorising:
-
-```
-   Working directory          Staging area              Repository
-   (your files on disk)       (the box being packed)    (sealed snapshots)
-
-        edit file  ──git add──▶  staged  ──git commit──▶  committed
-                 ◀──git restore──        ◀──git restore --staged──
-```
-
-* **Working directory**: what you see in your editor.
-* **Staging area**: what will go into the next commit.
-* **Repository**: the permanent history in `.git`.
-
-`git status` shows you the difference between all three.
-
-## 6. Make a change and see it: `git diff`
-
-Edit `temps.py`: change `25.1` to `26.4` and add a line at the end:
+Edit `temps.py`: change `25.1` to `26.4` and append
 
 ```python
 print(f"Max: {max(temps_c)} C")
 ```
 
-```bash
-git status      # says: modified: temps.py
-git diff        # shows exactly what changed, line by line
-```
+| ⌨️ Terminal | 🖱️ VS Code |
+|------------|-----------|
+| `git diff` | click `temps.py` under Changes: a side-by-side diff opens |
 
 ```diff
 -temps_c = [21.5, 23.0, 19.8, 25.1]
@@ -146,105 +132,92 @@ git diff        # shows exactly what changed, line by line
 +print(f"Max: {max(temps_c)} C")
 ```
 
-Lines starting with `-` were removed, `+` were added. This answers "what did I
-change since my last save?", a question you could never answer with
-`analysis_v2_fixed.ipynb`.
+`-` lines were removed, `+` lines added. This answers "what did I change
+since my last save?", the question `analysis_v2_fixed.ipynb` never could.
+In the editor itself, a green or blue bar in the gutter marks changed lines;
+click it to see the old version inline.
 
-`git diff` compares working directory to staging area. After you `git add`,
-plain `git diff` shows nothing; use `git diff --staged` to see what is about
-to be committed.
+`git diff` compares working directory to staging area. Once you stage, plain
+`git diff` shows nothing; use `git diff --staged` to see what is about to be
+committed. (VS Code: click the file under *Staged Changes*.)
 
-## 7. Commit the change
+## 6 · Commit the change
 
-```bash
-git add temps.py
-git commit -m "Correct last reading and print the maximum"
-```
+| ⌨️ Terminal | 🖱️ VS Code |
+|------------|-----------|
+| `git add temps.py` then `git commit -m "Correct last reading and print the maximum"` | **+** on the file → message → **✓ Commit** |
 
-Shortcut: `git commit -am "message"` stages **all modified tracked files**
-and commits in one go. It does not pick up new (untracked) files; those still
-need `git add`.
+Shortcut: `git commit -am "message"` stages every *modified tracked* file and
+commits in one go. It never picks up new files; those still need `git add`.
 
-## 8. Look at the history: `git log`
+### 🤖 Let Copilot draft the message
 
-```bash
-git log
-```
+In the commit message box there is a **✨ sparkle** button (*Generate Commit
+Message with Copilot*). It reads the staged diff and writes a message. Use it,
+then **edit it**: it describes *what* changed; you know *why*. Lesson 9 has
+the rules for a good message.
 
-```
-commit 8b1e4d2... (HEAD -> main)
-Author: Your Name <you@example.com>
-Date:   ...
+## 7 · Read the history: log
 
-    Correct last reading and print the maximum
-
-commit 3f2a9c1...
-Author: ...
-
-    Add temperature conversion script
-```
-
-The compact version you will actually use every day:
-
-```bash
-git log --oneline
-```
+| ⌨️ Terminal | 🖱️ VS Code |
+|------------|-----------|
+| `git log --oneline` | Source Control view → **Graph** section (scroll down in the panel) |
+| `git show 3f2a9c1` | click a commit in the Graph → its changed files open as diffs |
+| history of one file | open the file → **Timeline** at the bottom of Explorer |
 
 ```
 8b1e4d2 (HEAD -> main) Correct last reading and print the maximum
 3f2a9c1 Add temperature conversion script
 ```
 
-`HEAD` means "the commit you are currently standing on". `HEAD -> main` means
-HEAD is at the tip of the `main` branch.
+`HEAD` means "the commit you are standing on". `HEAD -> main` means HEAD is
+at the tip of branch `main`. The full `git log` adds author, date and the
+whole message.
 
-To see what a specific commit changed:
-
-```bash
-git show 3f2a9c1
+```mermaid
+gitGraph
+    commit id: "3f2a9c1 Add script"
+    commit id: "8b1e4d2 Correct reading" type: HIGHLIGHT
 ```
 
-## 9. Adding several files at once
+## 8 · Several files at once
 
-Create two more files: `README.md` (one line of description) and `notes.txt`.
+Create `README.md` (a title and one sentence) and `notes.txt`.
 
-```bash
-git add .            # stage everything new or modified in the current folder
-git status
-git commit -m "Add README and notes"
+| ⌨️ Terminal | 🖱️ VS Code |
+|------------|-----------|
+| `git add .` (everything new or modified in this folder) | **+** on the *Changes* header (Stage All Changes) |
+| `git status` → check the list | read the *Staged Changes* list |
+| `git commit -m "Add README and notes"` | message → **✓ Commit** |
+
+## 9 · One rule before you move on
+
+> [!WARNING]
+> **Always read what is in the box before you seal it.** `git add .` and
+> *Stage All* grab everything, including data files, secrets, and
+> `.ipynb_checkpoints/`. Lesson 9 shows `.gitignore`, which keeps junk out
+> for good. Until then: `git status`, read, then commit.
+
+## 🧪 Practice loop
+
+Do this five times with small edits to any file, until it is boring:
+
+```mermaid
+flowchart LR
+    E["edit a file"] --> S["git status\n🖱️ look at Changes"] --> D["git diff\n🖱️ click the file"] --> A["git add\n🖱️ +"] --> C["git commit -m\n🖱️ ✓ Commit"] --> L["git log --oneline\n🖱️ Graph"] --> E
 ```
-
-`git add .` is convenient but dangerous if your folder contains things you do
-not want tracked (data files, secrets, `.ipynb_checkpoints`). Lesson 9 shows
-`.gitignore`, which fixes this. For now, always run `git status` before
-committing to check what is in the box.
-
-## 10. Practice loop
-
-Do this five times with small changes to any file, until it is boring:
-
-```bash
-# edit a file
-git status
-git diff
-git add <file>
-git commit -m "What and why"
-git log --oneline
-```
-
-Boring is the goal. This loop is Git.
 
 ## Recap
 
-| Command | Meaning |
-|---------|---------|
-| `git init` | turn this folder into a repository |
-| `git status` | what state are my files in? |
-| `git add <file>` / `git add .` | stage changes for the next commit |
-| `git commit -m "msg"` | snapshot the staged changes |
-| `git commit -am "msg"` | stage all modified tracked files and commit |
-| `git diff` / `git diff --staged` | what changed, unstaged / staged |
-| `git log --oneline` | compact history |
-| `git show <id>` | what did that commit change? |
+| Command | Meaning | 🖱️ VS Code |
+|---------|---------|-----------|
+| `git init` | turn this folder into a repository | **Initialize Repository** |
+| `git status` | what state are my files in? | the Source Control view |
+| `git add <file>` / `git add .` | stage changes | **+** on a file / on *Changes* |
+| `git commit -m "msg"` | snapshot the staged changes | message box → **✓ Commit** |
+| `git commit -am "msg"` | stage all modified tracked files and commit | Commit with nothing staged → *Yes* |
+| `git diff` / `git diff --staged` | what changed, unstaged / staged | click the file |
+| `git log --oneline` | compact history | **Graph** section |
+| `git show <id>` | what one commit changed | click the commit in Graph |
 
-Next: [Lesson 4 — Undoing things](04-undoing-things.md)
+Next: [4 · Undoing things](04-undoing-things.md)

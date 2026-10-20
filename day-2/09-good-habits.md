@@ -1,45 +1,40 @@
-# Lesson 9 — Good habits
+# 9 · Good habits
 
-**Time: 30 minutes.**
+> ⏱️ 30 min · 🎯 Write commits people thank you for, keep junk out with `.gitignore`, structure a project, tag versions, and prepare the repo for AI helpers · ⌨️ + 🖱️
 
-Everything so far was mechanics. This lesson is about using them well, which
-is what separates a repo people enjoy working in from one they dread.
+**Day 2 ▸ Lesson 9 of 9**
 
-## 1. Commit messages
+Everything so far was mechanics. This is about using them well.
 
-A commit message has a **subject line** and an optional **body**, separated
-by a blank line:
+## 1 · Commit messages
 
 ```
-Fix off-by-one in rolling mean window
+Fix off-by-one in rolling mean window        ← subject: ≤ 50 chars, imperative, no period
+                                              ← blank line
+The window included the current row twice    ← body: WHY, wrapped at 72
+when center=True. Added a regression test
+with a 3-row frame.
 
-The window included the current row twice when `center=True`.
-Added a regression test with a 3-row frame.
-
-Closes #17
+Closes #17                                    ← footer: links
 ```
 
-Rules that the whole industry agrees on:
+| Rule | Test |
+|------|------|
+| imperative mood: *Add*, *Fix*, *Remove* | the subject completes *"If applied, this commit will ___"* |
+| one logical change per commit | "Fix typo and rewrite loader" is two commits |
+| body explains why, not what | the diff already shows what |
 
-* Subject ≤ 50 characters, capitalised, no trailing period.
-* **Imperative mood**: "Add plot", "Fix bug", not "Added" or "Fixes". Test:
-  the subject should complete the sentence *"If applied, this commit will
-  ___"*.
-* Body explains **why**, not what (the diff already shows what). Wrap at 72
-  characters.
-* One logical change per commit. "Fix typo and rewrite loader" is two commits.
+Bad: `fix`, `wip`, `changes`, `final version`. You will search this history
+one day.
 
-For multi-line messages run `git commit` without `-m`; your editor opens.
+🤖 Copilot's ✨ button writes a decent *what*. Add the *why* yourself. Over
+time the messages also become the material Copilot uses to draft PR titles
+and descriptions, so quality compounds.
 
-Bad: `fix`, `wip`, `changes`, `asdf`, `final version`. You will search this
-history one day; make the search worth it.
+## 2 · `.gitignore`
 
-## 2. `.gitignore`
-
-A file named `.gitignore` in the repo root lists patterns Git should never
-track. Commit the `.gitignore` itself.
-
-A solid starting point for a Python/Jupyter project:
+A file named `.gitignore` in the repo root lists patterns Git must never
+track. Commit the file itself. A solid start for Python and Jupyter:
 
 ```
 # Jupyter
@@ -56,19 +51,16 @@ dist/
 .venv/
 venv/
 env/
-.conda/
 
 # Secrets and local config
 .env
 *.key
-config.local.*
 
 # Data and outputs
 data/
 *.csv
 *.parquet
 *.pkl
-*.h5
 outputs/
 *.log
 
@@ -81,112 +73,110 @@ Thumbs.db
 
 Patterns: `name/` ignores a folder anywhere, `*.csv` an extension, `/data`
 only at the root, `!keep.csv` un-ignores. GitHub offers a full Python
-template when you create a repo, and https://gitignore.io generates one for
-any combination of tools.
+template when you create a repo; https://gitignore.io generates one for any
+tool mix.
 
-If you already committed something before ignoring it:
+Already committed something before ignoring it?
 
 ```bash
-git rm --cached data/big.csv     # stop tracking, keep the file on disk
+git rm --cached data/big.csv      # stop tracking, keep the file on disk
 git commit -m "Stop tracking data file"
 ```
 
-It stays in old commits; truly purging history needs `git filter-repo`,
-which is beyond this program. The lesson: add `.gitignore` as your **second
-commit**, right after the README.
+It stays in old commits; purging history needs `git filter-repo`, beyond
+this course. Hence the rule: **`.gitignore` is your second commit**, right
+after the README.
 
-## 3. A README that answers the three questions
-
-Every repo front page should tell a stranger:
-
-1. **What** is this? One paragraph.
-2. **How** do I run it? Install steps and one example command.
-3. **Where** do I go next? Structure, contributing, license, contact.
+## 3 · A README that answers three questions
 
 ```markdown
 # cleankit
 
-Small helpers for cleaning lists of strings before analysis.
+Small helpers for cleaning lists of strings before analysis.      ← WHAT
 
 ## Install
-
-    pip install -e .
+    pip install -e .                                               ← HOW
 
 ## Usage
-
     from cleankit import to_float
     to_float(["1.5", " 2 ", "x"])   # [1.5, 2.0]
 
-## Layout
-
+## Layout                                                           ← WHERE NEXT
 - `cleankit.py` — the library
 - `notebooks/` — exploration, numbered in order
 - `tests/` — run with `pytest`
 ```
 
-## 4. Repository layout for a data project
+## 4 · Layout for a data project
 
 ```
 project/
 ├── README.md
 ├── .gitignore
-├── requirements.txt      # or environment.yml / pyproject.toml
-├── data/                 # ignored; put a README inside explaining how to get it
+├── requirements.txt          # or environment.yml / pyproject.toml
+├── .github/
+│   ├── copilot-instructions.md   # how AI helpers should work here (lesson 10)
+│   └── workflows/                # automation (lesson 12)
+├── data/                     # ignored; README inside says how to get it
 ├── notebooks/
 │   ├── 01-explore.ipynb
 │   └── 02-model.ipynb
-├── src/ or project_name/ # reusable .py code
+├── src/ or project_name/     # reusable .py code
 └── tests/
 ```
 
-Commit `requirements.txt` (`pip freeze > requirements.txt`) or
-`environment.yml` (`conda env export --from-history > environment.yml`) so
-others can rebuild your environment.
+## 5 · Tags and releases
 
-## 5. Tags and releases
+A **tag** is a permanent name for one commit, used for versions.
 
-A **tag** is a permanent name for one commit, used for versions:
-
-```bash
-git tag -a v1.0 -m "First working release"
-git push origin v1.0            # tags are not pushed by default
-git tag                         # list
-git checkout v1.0               # look at that version
+```mermaid
+gitGraph
+    commit id: "add loader"
+    commit id: "first model" tag: "v0.1"
+    commit id: "fix dates"
+    commit id: "report for paper" tag: "v1.0"
+    commit id: "try new features"
 ```
 
-On GitHub, *Releases → Draft a new release* turns a tag into a page with
-notes and downloadable archives. Tag the version you used for a paper or a
-report so you can always reproduce it.
+```bash
+git tag -a v1.0 -m "Version used for the October report"
+git push origin v1.0            # tags are not pushed by default
+git checkout v1.0               # look at that version later
+```
 
-## 6. Small things experienced people do
+🖱️ Source Control **…** → *Tags* → **Create Tag**. On GitHub, *Releases →
+Draft a new release* turns a tag into a page with notes and downloads. Tag
+the exact commit behind any report or paper.
 
-* `git status` before every commit, `git diff --staged` before every
-  commit of consequence. Read what you are about to commit.
-* Commit early, commit often. A commit is free; a lost afternoon is not.
-* Pull before starting; push before stopping.
-* Branch names: short, lowercase, hyphenated, descriptive. `fix-nan-handling`
-  not `stuff` or `branch2`.
-* Never commit generated files you can regenerate (outputs, build artefacts,
-  caches).
-* Never commit credentials. If you did, rotate the credential immediately;
-  removing it from history is not enough once pushed.
-* Keep `main` working. Experiments go on branches.
-* Write the README before you forget how the project works, which is sooner
-  than you think.
-* Make aliases for what you type most (lives in `~/.gitconfig`):
+## 6 · Small things experienced people do
+
+- `git status` before every commit; `git diff --staged` before any commit of consequence.
+- Commit early and often. A commit is free; a lost afternoon is not.
+- Pull before starting, push before stopping.
+- Branch names: short, lowercase, hyphenated, descriptive. `fix-nan-handling`, not `stuff`.
+- Never commit generated files, data, or credentials. If a credential slipped out, rotate it at once; deleting it from history is not enough once pushed.
+- Keep `main` working. Experiments live on branches.
+- Aliases for what you type most (stored in `~/.gitconfig`):
 
 ```bash
 git config --global alias.st status
 git config --global alias.lg "log --oneline --graph --all"
-git config --global alias.co switch
+git config --global alias.sw switch
 ```
 
-## 7. Licenses (for public repos)
+## 7 · Licences for public repos
 
-Without a license file, others technically may not reuse your code even if
-it is public. For most personal projects pick **MIT** (do what you want,
-keep the notice). GitHub adds one via *Add file → Create new file → name it
-`LICENSE`* and offers templates. https://choosealicense.com explains the
-options.
+Without a licence file, others technically may not reuse your code even if
+it is public. For personal projects **MIT** is the usual choice. GitHub
+offers templates under *Add file → Create new file → `LICENSE`*;
+https://choosealicense.com explains the options.
 
-Next: [Day 2 exercises](day-2-exercises.md)
+## 8 · 🤖 Prepare the repo for AI helpers
+
+A file at `.github/copilot-instructions.md` tells Copilot (in VS Code and
+the cloud agent) how this project works: Python version, how to run tests,
+conventions, what never to touch. Lesson 10 gives you a template. Having
+one is the difference between an agent that guesses and one that follows
+your rules.
+
+Next: [Day 2 exercise](day-2-exercises.md)

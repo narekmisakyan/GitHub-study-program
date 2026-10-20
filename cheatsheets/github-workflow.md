@@ -1,103 +1,87 @@
-# GitHub workflow cheat sheet
+# GitHub workflow — cheat sheet
 
-Step-by-step recipes for the things you do on GitHub. Assumes you have
-authenticated once (`gh auth login`, an SSH key, or a token).
+Step-by-step recipes. Assumes VS Code is signed in to GitHub, or you ran
+`gh auth login`.
 
 ## Put an existing local project on GitHub
 
-1. GitHub → **+** → *New repository*. Name it. **Do not** add README,
-   `.gitignore` or license (keep it empty).
-2. ```bash
-   cd project
-   git remote add origin https://github.com/USER/project.git
-   git push -u origin main
-   ```
-3. Refresh the page.
+🖱️ Source Control → **Publish to GitHub** → public/private. Done.
+
+⌨️ Create an **empty** repo on github.com (no README, licence or `.gitignore`), then:
+
+```bash
+git remote add origin https://github.com/USER/project.git
+git push -u origin main
+```
 
 ## Start a new project from GitHub
 
-1. GitHub → **+** → *New repository*. This time tick *Add a README* and pick
-   a Python `.gitignore` and a license.
-2. `git clone https://github.com/USER/project.git` and `cd project`.
-
-## Get a copy of any public repo
-
-```bash
-git clone https://github.com/OWNER/repo.git
-```
+**+ → New repository** → tick *Add a README*, pick the Python `.gitignore`
+and a licence → **Git: Clone** in VS Code (or `git clone <url>`).
 
 ## Daily sync
 
 ```bash
-git pull            # start of session
+git pull        # start of session        🖱️ ↻ Sync
 # work, commit
-git push            # end of session
+git push        # end of session          🖱️ ↻ Sync
 ```
 
-## Push rejected: "fetch first" / "non-fast-forward"
+## Push rejected ("fetch first" / "non-fast-forward")
 
 ```bash
-git pull            # merge their work; fix conflicts if any; commit
+git pull        # merge their work; resolve conflicts; commit
 git push
 ```
 
 ## The pull request recipe
 
 ```bash
-git switch main && git pull                    # start from fresh main
-git switch -c short-descriptive-name           # branch
-# edit, git add, git commit (several times is fine)
-git push -u origin short-descriptive-name      # publish branch
+git switch main && git pull                 # fresh main
+git switch -c short-descriptive-name        # branch
+# edit, add, commit (several commits are fine)
+git push -u origin short-descriptive-name   # 🖱️ Publish Branch
 ```
 
-Then on GitHub: *Compare & pull request* → title + description (`Closes #N`
-to link an issue) → *Create pull request*.
+Then **Create Pull Request** in VS Code (✨ drafts title and description)
+or *Compare & pull request* on GitHub. Put `Closes #N` in the description.
 
-Reviewer asks for changes:
+| During review | After merge |
+|---------------|-------------|
+| commit + push on the same branch; the PR updates | GitHub: **Delete branch**. Locally: `git switch main && git pull && git branch -d name && git fetch --prune` |
 
-```bash
-# edit, git add, git commit
-git push                                       # PR updates itself
-```
-
-After merge (button on GitHub, then *Delete branch*):
-
-```bash
-git switch main
-git pull
-git branch -d short-descriptive-name
-git fetch --prune
-```
-
-## PR says "This branch has conflicts"
+## PR has conflicts
 
 ```bash
 git switch my-branch
-git pull origin main        # merge latest main into the branch
-# resolve conflicts, git add <files>, git commit
+git pull origin main         # merge latest main in; resolve; commit
 git push
 ```
 
-## Contribute to a project you cannot push to (fork workflow)
+## Fork workflow (no push rights)
 
-1. Click **Fork** on their repo.
+1. **Fork** on their page.
 2. `git clone https://github.com/YOU/repo.git && cd repo`
 3. `git remote add upstream https://github.com/THEM/repo.git`
-4. `git switch -c my-fix`, commit, `git push -u origin my-fix`
-5. Open PR; base = their repo `main`, compare = your fork `my-fix`.
-6. Keep your fork fresh:
-   ```bash
-   git switch main
-   git fetch upstream
-   git merge upstream/main
-   git push
-   ```
+4. branch, commit, `git push -u origin my-fix`, open PR with base = their `main`.
+5. Refresh: `git switch main && git fetch upstream && git merge upstream/main && git push`
 
 ## Issues
 
-* **New issue**: title, description, labels. Each gets a number `#N`.
-* Reference from commit message or PR: `See #N`. Close via PR: `Closes #N`,
-  `Fixes #N`, `Resolves #N` in the PR description.
+- New issue: title, description, labels → gets `#N`.
+- In commits/PRs: `See #N`; auto-close with `Closes #N`, `Fixes #N`, `Resolves #N`.
+- 🤖 Assign to **Copilot** to have the cloud agent open a PR for it.
+
+## Copilot on GitHub
+
+| Want | How |
+|------|-----|
+| Copilot review of a PR | PR → Reviewers → **Copilot** |
+| automatic Copilot review on every PR | Settings → Rules → ruleset → *Request pull request review from Copilot* |
+| PR title/description draft | ✨ in the PR form (web or VS Code) |
+| delegate an issue | Assignees → Copilot; or github.com/copilot/agents |
+| iterate on the agent's PR | comment mentioning `@copilot` |
+| let its tests run | **Approve and run workflows** on the PR |
 
 ## Release a version
 
@@ -106,49 +90,49 @@ git tag -a v1.2.0 -m "Describe the release"
 git push origin v1.2.0
 ```
 
-GitHub → *Releases* → *Draft a new release* → choose the tag → notes →
-*Publish*. Users can download a zip of that exact version.
+GitHub → *Releases → Draft a new release* → pick the tag → notes → **Publish**.
 
 ## Authentication
 
 | Method | Setup |
 |--------|-------|
-| GitHub CLI | install `gh`, run `gh auth login`, follow prompts |
-| SSH | `ssh-keygen -t ed25519 -C "email"`, copy `~/.ssh/id_ed25519.pub` to *Settings → SSH and GPG keys*, use `git@github.com:USER/repo.git` URLs |
-| Token | *Settings → Developer settings → Personal access tokens*; paste as password when Git asks |
+| VS Code | Accounts icon → Sign in with GitHub (enough for the Source Control view) |
+| GitHub CLI | install `gh`, `gh auth login` (configures Git too) |
+| SSH | `ssh-keygen -t ed25519 -C "email"`, paste `~/.ssh/id_ed25519.pub` into Settings → SSH keys, use `git@github.com:USER/repo.git` URLs |
 
-Switch an existing clone between HTTPS and SSH:
-`git remote set-url origin git@github.com:USER/repo.git`
+Switch a clone between HTTPS and SSH: `git remote set-url origin git@github.com:USER/repo.git`
 
-## Useful `gh` CLI commands
+## `gh` CLI quick reference
 
 ```bash
-gh repo create project --private --source=. --push   # create repo from current folder and push
+gh repo create project --private --source=. --push    # create from current folder and push
 gh repo clone OWNER/repo
-gh pr create --fill                                   # open PR from current branch
+gh pr create --fill                                    # PR from current branch
 gh pr list
-gh pr checkout 42                                     # get PR #42 locally
+gh pr checkout 42                                      # PR #42 locally
 gh pr merge 42 --squash --delete-branch
 gh issue create --title "Bug" --body "Details"
 gh issue list
-gh browse                                             # open repo in browser
+gh issue edit 12 --add-assignee "@copilot"             # hand it to the cloud agent (verify it stuck)
+gh run list                                            # Actions runs
+gh run watch                                           # follow the current run
+gh browse                                              # open the repo in the browser
 ```
 
-## Where things are on the GitHub page
+## Where things are on a repo page
 
 | Want | Where |
 |------|-------|
 | clone URL | green **Code** button |
-| history | *commits* link above file list |
-| switch branch | branch dropdown, top left |
-| edit a file in browser | pencil icon on the file (creates a commit) |
-| file history | open file → *History* |
-| who changed a line | open file → *Blame* |
-| CI results | *Actions* tab; tick/cross next to commits |
-| settings, collaborators, delete repo | *Settings* tab |
+| history | *commits* link |
+| switch branch | branch dropdown |
+| edit in browser | pencil on a file (creates a commit) |
+| file history / blame | open file → *History* / *Blame* |
+| CI results | *Actions* tab; ✓ / ✗ beside commits |
+| rules, collaborators, secrets, delete | *Settings* tab |
 | browser VS Code | press `.` anywhere in the repo |
 
-## Markdown you will use in READMEs, issues and PRs
+## Markdown for READMEs, issues and PRs
 
 ````markdown
 # Heading 1
@@ -159,6 +143,8 @@ gh browse                                             # open repo in browser
 [link text](https://url)
 ![image alt](path/to/image.png)
 > quote
+> [!TIP]
+> a callout (also NOTE, IMPORTANT, WARNING, CAUTION)
 - [ ] task not done
 - [x] task done
 

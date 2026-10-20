@@ -1,83 +1,84 @@
-# Lesson 8 — Jupyter notebooks and Git
+# 8 · Jupyter notebooks and Git
 
-**Time: 30 minutes.**
+> ⏱️ 30 min · 🎯 Understand why notebooks fight with Git, fix it with two tools and three habits, and use VS Code's notebook diff · 🖱️ + ⌨️
 
-Notebooks work with Git, but they have two quirks you must know about or they
-will drive you mad.
+**Day 2 ▸ Lesson 8 of 9**
 
-## 1. What an `.ipynb` file actually is
+Notebooks work with Git, but two quirks will drive you mad unless you know
+about them.
 
-Open a notebook in a text editor. It is JSON:
+## 1 · What an `.ipynb` file really is
 
-```json
-{
- "cells": [
-  {
-   "cell_type": "code",
-   "execution_count": 3,
-   "metadata": {},
-   "outputs": [ { "data": { "image/png": "iVBORw0KGgoAAAANSUhEUgAA..." } } ],
-   "source": [ "df.plot()\n" ]
-  }
- ]
-}
+Open a notebook in a plain text editor. It is JSON: your code, plus
+execution counts, plus **every output**, including each plot as a long
+base64 string.
+
+```mermaid
+pie showData
+    title Bytes in a typical analysis notebook with outputs
+    "Your code" : 8
+    "Markdown cells" : 4
+    "Metadata and execution counts" : 3
+    "Outputs (tables, images)" : 85
 ```
 
-Your code is in there, but so are **execution counts**, **outputs** (including
-every plot as a giant base64 string) and metadata. Consequences:
+```mermaid
+flowchart LR
+    R["re-run the notebook"] --> O["outputs and\nexecution counts change"] --> D["giant unreadable diffs"]
+    O --> C["two people re-run\n→ merge conflicts\neven with identical code"]
+    O --> S["every plot stored forever\n→ bloated repo"]
+```
 
-* **Diffs are unreadable.** Change one line of code, re-run, and `git diff`
-  shows thousands of changed characters of image data.
-* **Merges conflict constantly.** Two people re-run the same notebook, the
-  execution counts and outputs differ, Git sees conflicting lines everywhere
-  even when the code is identical.
-* **Repos bloat.** Every committed output of a 2 MB plot stays in history
-  forever.
+## 2 · Fix 1: do not commit outputs
 
-## 2. Fix 1: do not commit outputs (recommended)
-
-Install `nbstripout`, which strips outputs automatically every time Git
-stages a notebook. Your notebook on disk keeps its outputs; only the committed
-version is clean.
+`nbstripout` strips outputs automatically whenever Git stages a notebook.
+Your file on disk keeps its outputs; only the committed copy is clean.
 
 ```bash
 pip install nbstripout
-cd ~/cleankit            # inside each repo, once
-nbstripout --install
+cd ~/cleankit
+nbstripout --install          # once per repository
 ```
 
-This writes to `.gitattributes` and `.git/config`. From now on
-`git add notebook.ipynb` stores a version without outputs or execution
-counts. Diffs become plain code diffs. Merges mostly just work.
+It writes a filter into `.gitattributes` and `.git/config`. From then on
+notebook diffs are code diffs and merges mostly just work. Commit the
+`.gitattributes` file.
 
-Alternative without any tool: in Jupyter, *Kernel → Restart & Clear Output*
-before every commit. It works but you will forget.
+No tool? *Kernel → Restart Kernel and Clear All Outputs* before every
+commit. It works until you forget.
 
-When you *do* want outputs preserved (a report where the plots are the
-point), keep a separate exported copy: *File → Save and Export Notebook As →
-HTML* and commit the HTML, or keep that notebook out of nbstripout with a
-`.gitattributes` exception.
+When the outputs *are* the deliverable, export a copy (*File → Save and
+Export Notebook As → HTML*) and commit that instead.
 
-## 3. Fix 2: readable notebook diffs with `nbdime`
+## 3 · Fix 2: readable notebook diffs
+
+🖱️ **VS Code** already has a notebook diff viewer: click a changed `.ipynb`
+in the Source Control view and you see cell-by-cell changes, with a toolbar
+toggle to hide output and metadata changes. Two settings make that the
+default:
+
+```json
+"notebook.diff.ignoreOutputs": true,
+"notebook.diff.ignoreMetadata": true
+```
+
+⌨️ For the terminal and for merges, `nbdime`:
 
 ```bash
 pip install nbdime
 nbdime config-git --enable --global
+git diff notebook.ipynb         # now cell-based
+nbdiff-web notebook.ipynb       # side-by-side in the browser
+nbmerge-web notebook.ipynb      # resolve a conflicted notebook visually
 ```
 
-Now `git diff` on a notebook shows cell-by-cell changes, and
-`nbdiff-web notebook.ipynb` opens a side-by-side viewer in the browser.
-`nbdime` also provides a merge tool (`nbmerge-web`) for the conflicts that do
-happen.
+GitHub renders notebooks and, in PRs, shows a *rich diff* for `.ipynb`
+files (toggle at the top right of the file in *Files changed*).
 
-GitHub itself renders notebooks nicely and, in PRs, shows a *rich diff* for
-`.ipynb` files (the toggle at the top right of the file in *Files changed*).
+## 4 · Fix 3: ignore the junk Jupyter creates
 
-## 4. Fix 3: ignore the junk Jupyter creates
-
-Jupyter writes `.ipynb_checkpoints/` folders next to every notebook. They
-must never be committed. Lesson 9 covers `.gitignore` properly; the lines you
-need are:
+`.ipynb_checkpoints/` folders appear next to every notebook and must never
+be committed. Lesson 9 covers `.gitignore` in full; the lines you need:
 
 ```
 .ipynb_checkpoints/
@@ -86,50 +87,34 @@ __pycache__/
 .venv/
 ```
 
-## 5. A workflow that keeps notebooks and code sane
+## 5 · A workflow that keeps notebooks sane
 
-The pattern most data teams converge on:
+```mermaid
+flowchart LR
+    E["explore in\n01-load.ipynb\n02-clean.ipynb"] --> X["function used twice?\nmove it to a .py module"] --> I["notebook imports it\n%autoreload 2"] --> T["tests on the .py code\n(Day 3 runs them in CI)"]
+    E --> K["commit at natural\ncheckpoints, not\nevery cell run"]
+```
 
-1. **Explore in notebooks.** Name them with a number prefix so they sort:
-   `01-load-data.ipynb`, `02-clean.ipynb`, `03-model.ipynb`.
-2. **Move stable code out into `.py` modules** as soon as a function is used
-   in more than one place. Notebooks then `from cleankit import to_float`.
-   Python files diff and merge perfectly; notebooks stay short.
-   Add `%load_ext autoreload` / `%autoreload 2` at the top of a notebook so
-   edits to the module are picked up without restarting the kernel.
-3. **Commit at natural checkpoints**: "loader works", "baseline model
-   trained". Not every cell execution.
-4. **Do not commit data.** Data is big, changes differently from code and
-   may be private. Put it in `data/` and add `data/` to `.gitignore`. Commit
-   a small sample or a script that downloads it. (For tracking large files
-   with Git, look up *Git LFS* or *DVC* later.)
-5. **Do not commit secrets.** API keys go in a `.env` file or environment
-   variables, and `.env` goes in `.gitignore`. A key pushed to a public repo
-   is compromised within minutes; bots scan for them.
+| Habit | Why |
+|-------|-----|
+| number notebooks `01-…`, `02-…` | they sort in reading order |
+| move stable code to `.py` files | Python files diff and merge perfectly; notebooks stay short |
+| `%load_ext autoreload` / `%autoreload 2` in the first cell | module edits appear without restarting the kernel |
+| **never commit data** | big, private, changes differently from code. Put it in `data/`, ignore it, commit a small sample or a download script |
+| **never commit secrets** | keys go in `.env` (ignored) and are read with `os.environ`. A key pushed to a public repo is harvested by bots within minutes |
+| commit `requirements.txt` or `environment.yml` | others, and CI, can rebuild your environment |
 
-## 6. Jupytext: notebooks as plain text (optional, advanced)
+## 6 · Jupytext (optional)
 
-[Jupytext](https://jupytext.readthedocs.io) pairs each `.ipynb` with a `.py`
-file containing the same cells as a script with `# %%` markers. You commit the
-`.py`, ignore the `.ipynb`, and Jupyter keeps both in sync. VS Code and
-PyCharm open `# %%` files as notebooks directly. Worth adopting once you are
-comfortable with everything else in this program.
+[Jupytext](https://jupytext.readthedocs.io) pairs each notebook with a `.py`
+file using `# %%` cell markers. Commit the `.py`, ignore the `.ipynb`, and
+both stay in sync on save. VS Code opens `# %%` files as notebooks directly.
+Adopt it once everything else here is routine.
 
-## 7. Git inside JupyterLab
+## 🧪 Practice
 
-The `jupyterlab-git` extension (`pip install jupyterlab-git`) adds a Git
-sidebar to JupyterLab: stage, commit, push, pull, branch, all with buttons,
-and a diff viewer. It is a fine way to run the daily loop once you understand
-what the buttons do.
+1. In `cleankit`, create `notebooks/01-demo.ipynb` with two cells that import and use your functions. Run it, commit it, and look at the diff in Source Control with and without *ignore outputs*.
+2. Install `nbstripout`, run `nbstripout --install`, re-run the notebook, commit again. The diff is now only code.
+3. Add the four ignore lines above to `.gitignore`, commit, confirm `.ipynb_checkpoints/` no longer shows up.
 
-## Practice
-
-1. In `cleankit`, create `01-demo.ipynb` with two cells that import and use
-   your functions, run it, commit it. Look at `git show --stat HEAD` and the
-   diff. Note the noise.
-2. Install `nbstripout`, run `nbstripout --install`, re-run the notebook,
-   commit again. Look at the diff: only metadata changed, no outputs.
-3. Add a `.gitignore` with the four lines above and commit it. Confirm
-   `.ipynb_checkpoints/` no longer appears in `git status`.
-
-Next: [Lesson 9 — Good habits](09-good-habits.md)
+Next: [9 · Good habits](09-good-habits.md)
